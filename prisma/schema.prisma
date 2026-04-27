@@ -1,0 +1,54 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// 用户表
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  nickname  String?
+  role      String   @default("user")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  accessTokens AccessToken[]
+  aiRequests   AiRequest[]
+
+  @@map("users")
+}
+
+/// 访问令牌表
+model AccessToken {
+  id        String    @id @default(uuid())
+  token     String    @unique
+  userId    String    @map("user_id")
+  scope     String[]  @default(["ai"])
+  aiQuota   Int       @default(100) @map("ai_quota")
+  aiUsed    Int       @default(0) @map("ai_used")
+  expiresAt DateTime? @map("expires_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("access_tokens")
+}
+
+/// AI 请求记录表
+model AiRequest {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  word      String
+  input     Json
+  output    Json?
+  status    String   @default("pending")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("ai_requests")
+}
