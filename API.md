@@ -200,7 +200,7 @@ curl -X POST "$BASE_URL/api/v1/auth/register" \
 
 相关错误码：`40001`、`40002`、`40003`、`40900`、`50000`。
 
-### POST `/api/v1/auth/login`
+### ❗POST `/api/v1/auth/login`
 
 用途：使用邮箱和密码登录管理站。
 
@@ -232,7 +232,9 @@ curl -X POST "$BASE_URL/api/v1/auth/login" \
 
 相关错误码：`40102`、`50000`。
 
-### POST `/api/v1/auth/refresh`
+
+
+### ❗POST `/api/v1/auth/refresh`
 
 用途：使用 refresh token 换取新的管理站 JWT。
 

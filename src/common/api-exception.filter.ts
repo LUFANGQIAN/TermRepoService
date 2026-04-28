@@ -4,6 +4,8 @@ import { Response } from 'express';
 @Catch()
 export class ApiExceptionFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost) {
+    console.error('[ApiExceptionFilter] Unhandled exception:', exception);
+
     const response = host.switchToHttp().getResponse<Response>();
     if (exception instanceof HttpException) {
       const status = exception.getStatus();
@@ -19,4 +21,3 @@ export class ApiExceptionFilter implements ExceptionFilter {
     response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ code: 50000, message: 'internal server error', data: null });
   }
 }
-

@@ -1,0 +1,897 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TermRepo API 测试面板</title>
+    <style>
+      :root {
+        --bg: #ffffff;
+        --text: #171717;
+        --muted: #4d4d4d;
+        --soft: #666666;
+        --line: rgba(0, 0, 0, 0.08) 0 0 0 1px;
+        --card: rgba(0, 0, 0, 0.08) 0 0 0 1px, rgba(0, 0, 0, 0.04) 0 2px 2px,
+          rgba(0, 0, 0, 0.04) 0 8px 8px -8px, #fafafa 0 0 0 1px;
+        --focus: hsla(212, 100%, 48%, 1);
+        --blue: #0a72ef;
+        --pink: #de1d8d;
+        --red: #ff5b4f;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: Geist, Arial, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
+        font-feature-settings: "liga" 1;
+      }
+
+      button,
+      input,
+      textarea,
+      select {
+        font: inherit;
+      }
+
+      .shell {
+        width: min(1200px, calc(100vw - 32px));
+        margin: 0 auto;
+        padding: 40px 0 80px;
+      }
+
+      .hero {
+        display: grid;
+        gap: 16px;
+        padding: 48px 0 40px;
+      }
+
+      .badge {
+        width: fit-content;
+        padding: 4px 10px;
+        border-radius: 9999px;
+        background: #ebf5ff;
+        color: #0068d6;
+        font-size: 12px;
+        font-weight: 500;
+        line-height: 1.33;
+      }
+
+      h1 {
+        margin: 0;
+        max-width: 760px;
+        font-size: clamp(36px, 7vw, 48px);
+        font-weight: 600;
+        line-height: 1.05;
+        letter-spacing: -2.4px;
+      }
+
+      .lead {
+        max-width: 760px;
+        margin: 0;
+        color: var(--muted);
+        font-size: 18px;
+        line-height: 1.56;
+      }
+
+      .panel {
+        display: grid;
+        gap: 16px;
+        padding: 16px;
+        border-radius: 12px;
+        box-shadow: var(--card);
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+      }
+
+      .field {
+        display: grid;
+        gap: 6px;
+      }
+
+      label {
+        color: var(--text);
+        font-size: 14px;
+        font-weight: 500;
+        line-height: 1.43;
+      }
+
+      input,
+      textarea,
+      select {
+        width: 100%;
+        border: 0;
+        border-radius: 6px;
+        outline: none;
+        box-shadow: var(--line);
+        background: #ffffff;
+        color: var(--text);
+      }
+
+      input,
+      select {
+        height: 40px;
+        padding: 0 12px;
+      }
+
+      textarea {
+        min-height: 96px;
+        padding: 12px;
+        resize: vertical;
+        font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 13px;
+        line-height: 1.54;
+      }
+
+      input:focus,
+      textarea:focus,
+      select:focus,
+      button:focus-visible {
+        outline: 2px solid var(--focus);
+        outline-offset: 2px;
+      }
+
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+      }
+
+      button {
+        min-height: 36px;
+        padding: 8px 14px;
+        border: 0;
+        border-radius: 6px;
+        background: #ffffff;
+        color: var(--text);
+        box-shadow: rgb(235, 235, 235) 0 0 0 1px;
+        font-size: 14px;
+        font-weight: 500;
+        line-height: 1.43;
+        cursor: pointer;
+      }
+
+      button.primary {
+        background: var(--text);
+        color: #ffffff;
+        box-shadow: none;
+      }
+
+      button.danger {
+        color: var(--red);
+      }
+
+      button:disabled {
+        cursor: not-allowed;
+        opacity: 0.55;
+      }
+
+      .status-bar {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+      }
+
+      .status-card {
+        padding: 14px;
+        border-radius: 8px;
+        box-shadow: var(--line);
+      }
+
+      .status-card strong {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 14px;
+        font-weight: 600;
+        letter-spacing: -0.32px;
+      }
+
+      .status-card code {
+        display: block;
+        overflow: hidden;
+        color: var(--muted);
+        font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 12px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .section-title {
+        margin: 40px 0 16px;
+        font-size: 32px;
+        font-weight: 600;
+        line-height: 1.25;
+        letter-spacing: -1.28px;
+      }
+
+      .api-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+      }
+
+      .api-card {
+        display: grid;
+        gap: 12px;
+        padding: 16px;
+        border-radius: 8px;
+        box-shadow: var(--card);
+      }
+
+      .api-head {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        justify-content: space-between;
+      }
+
+      .api-title {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 600;
+        line-height: 1.5;
+        letter-spacing: -0.32px;
+      }
+
+      .method {
+        min-width: 48px;
+        padding: 3px 8px;
+        border-radius: 9999px;
+        background: #fafafa;
+        box-shadow: var(--line);
+        font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 12px;
+        font-weight: 500;
+        line-height: 1.33;
+        text-align: center;
+      }
+
+      .path {
+        color: var(--muted);
+        font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 13px;
+        line-height: 1.54;
+        word-break: break-all;
+      }
+
+      .hint {
+        color: var(--soft);
+        font-size: 13px;
+        line-height: 1.54;
+      }
+
+      .auth-none {
+        color: var(--soft);
+      }
+
+      .auth-jwt {
+        color: var(--blue);
+      }
+
+      .auth-plugin {
+        color: var(--pink);
+      }
+
+      .auth-any {
+        color: var(--red);
+      }
+
+      .result {
+        min-height: 120px;
+        max-height: 340px;
+        margin: 0;
+        padding: 12px;
+        overflow: auto;
+        border-radius: 6px;
+        background: #fafafa;
+        box-shadow: var(--line);
+        color: var(--text);
+        font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 12px;
+        line-height: 1.5;
+        white-space: pre-wrap;
+      }
+
+      .log {
+        min-height: 240px;
+      }
+
+      @media (max-width: 900px) {
+        .grid,
+        .status-bar,
+        .api-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero">
+        <span class="badge">TermRepo API v1</span>
+        <h1>一个页面测试所有已实现接口。</h1>
+        <p class="lead">
+          支持健康检查、认证、插件 Token、Beta、AI 和云同步接口。先注册或登录，页面会自动保存 JWT、Refresh Token 和插件 Token。
+        </p>
+      </section>
+
+      <section class="panel">
+        <div class="grid">
+          <div class="field">
+            <label for="baseUrl">服务地址</label>
+            <input id="baseUrl" value="http://localhost:3000" />
+          </div>
+          <div class="field">
+            <label for="email">测试邮箱</label>
+            <input id="email" type="email" />
+          </div>
+          <div class="field">
+            <label for="password">测试密码</label>
+            <input id="password" type="password" value="test1234" />
+          </div>
+          <div class="field">
+            <label for="username">用户名</label>
+            <input id="username" value="termrepo-tester" />
+          </div>
+          <div class="field">
+            <label for="usageRange">AI 用量范围</label>
+            <select id="usageRange">
+              <option value="24h">24h</option>
+              <option value="7d" selected>7d</option>
+              <option value="30d">30d</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="importMode">快照导入模式</label>
+            <select id="importMode">
+              <option value="overwrite">overwrite</option>
+              <option value="merge" selected>merge</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid">
+          <div class="field">
+            <label for="accessToken">JWT Access Token</label>
+            <textarea id="accessToken" placeholder="登录或注册成功后自动填充"></textarea>
+          </div>
+          <div class="field">
+            <label for="refreshToken">Refresh Token</label>
+            <textarea id="refreshToken" placeholder="登录或注册成功后自动填充"></textarea>
+          </div>
+          <div class="field">
+            <label for="pluginToken">插件 Access Token</label>
+            <textarea id="pluginToken" placeholder="调用 token/current 后自动填充"></textarea>
+          </div>
+        </div>
+
+        <div class="toolbar">
+          <button class="primary" id="runAll">一键按顺序测试全部接口</button>
+          <button id="randomEmail">生成随机邮箱</button>
+          <button id="saveState">保存当前 Token</button>
+          <button class="danger" id="clearState">清空本地状态</button>
+        </div>
+
+        <div class="status-bar">
+          <div class="status-card">
+            <strong>JWT</strong>
+            <code id="jwtStatus">未设置</code>
+          </div>
+          <div class="status-card">
+            <strong>Refresh Token</strong>
+            <code id="refreshStatus">未设置</code>
+          </div>
+          <div class="status-card">
+            <strong>插件 Token</strong>
+            <code id="pluginStatus">未设置</code>
+          </div>
+        </div>
+      </section>
+
+      <h2 class="section-title">请求参数</h2>
+      <section class="panel">
+        <div class="grid">
+          <div class="field">
+            <label for="betaReason">Beta 申请理由</label>
+            <textarea id="betaReason">希望体验 TermRepo 的 AI 术语分析和云同步能力。</textarea>
+          </div>
+          <div class="field">
+            <label for="aiPayload">AI 分析请求体</label>
+            <textarea id="aiPayload">{
+  "originalText": "OAuth refresh token rotation",
+  "parts": ["OAuth", "refresh token", "rotation"],
+  "filePath": "docs/auth.md",
+  "context": "术语表中需要解释认证刷新机制"
+}</textarea>
+          </div>
+          <div class="field">
+            <label for="snapshotPayload">云同步快照</label>
+            <textarea id="snapshotPayload">{
+  "terms": [
+    {
+      "id": "oauth-refresh-token-rotation",
+      "originalText": "OAuth refresh token rotation",
+      "translation": "OAuth 刷新令牌轮换",
+      "note": "用于降低长期令牌泄露风险的认证策略"
+    }
+  ]
+}</textarea>
+          </div>
+        </div>
+      </section>
+
+      <h2 class="section-title">接口列表</h2>
+      <section id="apiGrid" class="api-grid"></section>
+
+      <h2 class="section-title">批量执行日志</h2>
+      <pre id="globalLog" class="result log">等待执行...</pre>
+    </main>
+
+    <script>
+      const $ = (id) => document.getElementById(id);
+      const stateKeys = ['baseUrl', 'email', 'password', 'username', 'accessToken', 'refreshToken', 'pluginToken'];
+
+      const endpoints = [
+        {
+          id: 'healthRoot',
+          group: 'health',
+          title: '基础健康检查',
+          method: 'GET',
+          path: '/health',
+          auth: 'none',
+          description: '检查服务和数据库连接。',
+        },
+        {
+          id: 'healthApi',
+          group: 'health',
+          title: 'API 健康检查',
+          method: 'GET',
+          path: '/api/v1/health',
+          auth: 'none',
+          description: '标准 v1 健康检查。',
+        },
+        {
+          id: 'register',
+          group: 'auth',
+          title: '注册',
+          method: 'POST',
+          path: '/api/v1/auth/register',
+          auth: 'none',
+          description: '创建用户，并自动保存 JWT 和 Refresh Token。',
+          body: () => ({ email: $('email').value.trim(), password: $('password').value, username: $('username').value.trim() }),
+          after: saveAuth,
+        },
+        {
+          id: 'login',
+          group: 'auth',
+          title: '登录',
+          method: 'POST',
+          path: '/api/v1/auth/login',
+          auth: 'none',
+          description: '使用邮箱和密码登录。',
+          body: () => ({ email: $('email').value.trim(), password: $('password').value }),
+          after: saveAuth,
+        },
+        {
+          id: 'refresh',
+          group: 'auth',
+          title: '刷新 JWT',
+          method: 'POST',
+          path: '/api/v1/auth/refresh',
+          auth: 'none',
+          description: '使用 Refresh Token 换取新的 JWT。',
+          body: () => ({ refreshToken: $('refreshToken').value.trim() }),
+          after: saveAuth,
+        },
+        {
+          id: 'me',
+          group: 'auth',
+          title: '当前用户',
+          method: 'GET',
+          path: '/api/v1/auth/me',
+          auth: 'jwt',
+          description: '需要 JWT Bearer Token。',
+        },
+        {
+          id: 'logout',
+          group: 'auth',
+          title: '退出登录',
+          method: 'POST',
+          path: '/api/v1/auth/logout',
+          auth: 'none',
+          description: '注销当前 Refresh Token，建议最后测试。',
+          body: () => ({ refreshToken: $('refreshToken').value.trim() }),
+        },
+        {
+          id: 'tokenCurrent',
+          group: 'token',
+          title: '当前插件 Token',
+          method: 'GET',
+          path: '/api/v1/token/current',
+          auth: 'jwt',
+          description: '获取或创建插件访问令牌。',
+          after: savePluginToken,
+        },
+        {
+          id: 'tokenRegenerate',
+          group: 'token',
+          title: '重置插件 Token',
+          method: 'POST',
+          path: '/api/v1/token/regenerate',
+          auth: 'jwt',
+          description: '吊销旧插件 Token 并生成新 Token。',
+          after: savePluginToken,
+        },
+        {
+          id: 'tokenValidate',
+          group: 'token',
+          title: '校验插件 Token',
+          method: 'POST',
+          path: '/api/v1/token/validate',
+          auth: 'none',
+          description: '校验当前插件 Token 是否有效。',
+          body: () => ({ token: $('pluginToken').value.trim() }),
+        },
+        {
+          id: 'betaStatus',
+          group: 'beta',
+          title: 'Beta 状态',
+          method: 'GET',
+          path: '/api/v1/beta/status',
+          auth: 'jwt',
+          description: '查询当前用户 Beta 申请状态。',
+        },
+        {
+          id: 'betaApply',
+          group: 'beta',
+          title: '提交 Beta 申请',
+          method: 'POST',
+          path: '/api/v1/beta/apply',
+          auth: 'jwt',
+          description: '提交内测申请，会写入申请记录。',
+          body: () => ({ reason: $('betaReason').value.trim(), scope: ['ai', 'sync'] }),
+        },
+        {
+          id: 'aiStatus',
+          group: 'ai',
+          title: 'AI 状态',
+          method: 'GET',
+          path: '/api/v1/ai/status',
+          auth: 'jwt',
+          description: '查询 AI 开关、额度和用量。',
+        },
+        {
+          id: 'aiToggle',
+          group: 'ai',
+          title: '开启 AI',
+          method: 'POST',
+          path: '/api/v1/ai/toggle',
+          auth: 'jwt',
+          description: '设置 AI enabled=true，避免分析接口被禁用。',
+          body: () => ({ enabled: true }),
+        },
+        {
+          id: 'aiUsage',
+          group: 'ai',
+          title: 'AI 用量',
+          method: 'GET',
+          path: () => `/api/v1/ai/usage?range=${encodeURIComponent($('usageRange').value)}`,
+          auth: 'jwt',
+          description: '支持 24h、7d、30d。',
+        },
+        {
+          id: 'aiAnalyze',
+          group: 'ai',
+          title: 'AI 术语分析',
+          method: 'POST',
+          path: '/api/v1/ai/analyze-term',
+          auth: 'plugin',
+          description: '需要插件 Token，且 scope 包含 ai:analyze。',
+          body: () => jsonFromTextarea('aiPayload'),
+        },
+        {
+          id: 'syncStatus',
+          group: 'sync',
+          title: '同步状态',
+          method: 'GET',
+          path: '/api/v1/sync/status',
+          auth: 'any',
+          description: '支持 JWT 或插件 Token。这里优先使用插件 Token。',
+        },
+        {
+          id: 'syncToggle',
+          group: 'sync',
+          title: '开启云同步',
+          method: 'POST',
+          path: '/api/v1/sync/toggle',
+          auth: 'any',
+          description: '设置 sync enabled=true。',
+          body: () => ({ enabled: true }),
+        },
+        {
+          id: 'syncExport',
+          group: 'sync',
+          title: '导出快照',
+          method: 'GET',
+          path: '/api/v1/sync/snapshot/export',
+          auth: 'any',
+          description: '导出当前云端术语快照。',
+        },
+        {
+          id: 'syncImport',
+          group: 'sync',
+          title: '导入快照',
+          method: 'POST',
+          path: '/api/v1/sync/snapshot/import',
+          auth: 'any',
+          description: '导入 textarea 中的 terms 快照。',
+          body: () => ({ mode: $('importMode').value, snapshot: jsonFromTextarea('snapshotPayload') }),
+        },
+      ];
+
+      function saveAuth(payload) {
+        const data = payload.response?.data;
+        if (!data) return;
+        if (data.accessToken) $('accessToken').value = data.accessToken;
+        if (data.refreshToken) $('refreshToken').value = data.refreshToken;
+        persistState();
+        updateStatus();
+      }
+
+      function savePluginToken(payload) {
+        const token = payload.response?.data?.token;
+        if (token) $('pluginToken').value = token;
+        persistState();
+        updateStatus();
+      }
+
+      function jsonFromTextarea(id) {
+        const raw = $(id).value.trim();
+        return raw ? JSON.parse(raw) : {};
+      }
+
+      function getPath(endpoint) {
+        return typeof endpoint.path === 'function' ? endpoint.path() : endpoint.path;
+      }
+
+      function baseUrl() {
+        return $('baseUrl').value.trim().replace(/\/$/, '');
+      }
+
+      function authHeader(type) {
+        if (type === 'jwt') return { Authorization: `Bearer ${$('accessToken').value.trim()}` };
+        if (type === 'plugin') return { Authorization: `Bearer ${$('pluginToken').value.trim()}` };
+        if (type === 'any') {
+          const pluginToken = $('pluginToken').value.trim();
+          const accessToken = $('accessToken').value.trim();
+          return { Authorization: `Bearer ${pluginToken || accessToken}` };
+        }
+        return {};
+      }
+
+      async function callEndpoint(endpoint, targetPre) {
+        const path = getPath(endpoint);
+        const url = `${baseUrl()}${path}`;
+        const headers = { ...authHeader(endpoint.auth) };
+        const options = { method: endpoint.method, headers };
+
+        if (endpoint.method !== 'GET' && endpoint.body) {
+          headers['Content-Type'] = 'application/json';
+          options.body = JSON.stringify(endpoint.body());
+        }
+
+        const startedAt = performance.now();
+        setPre(targetPre, `请求中：${endpoint.method} ${path}`);
+
+        try {
+          const httpResponse = await fetch(url, options);
+          const text = await httpResponse.text();
+          const response = parseMaybeJson(text);
+          const payload = {
+            ok: httpResponse.ok,
+            httpStatus: httpResponse.status,
+            durationMs: Math.round(performance.now() - startedAt),
+            request: {
+              method: endpoint.method,
+              url,
+              auth: endpoint.auth,
+              body: options.body ? JSON.parse(options.body) : undefined,
+            },
+            response,
+          };
+          endpoint.after?.(payload);
+          setPre(targetPre, pretty(payload));
+          return payload;
+        } catch (error) {
+          const payload = {
+            ok: false,
+            request: { method: endpoint.method, url, auth: endpoint.auth },
+            error: String(error),
+          };
+          setPre(targetPre, pretty(payload));
+          return payload;
+        }
+      }
+
+      function parseMaybeJson(text) {
+        if (!text) return null;
+        try {
+          return JSON.parse(text);
+        } catch {
+          return text;
+        }
+      }
+
+      function pretty(value) {
+        return JSON.stringify(value, null, 2);
+      }
+
+      function setPre(pre, text) {
+        pre.textContent = text;
+      }
+
+      function renderEndpoints() {
+        const grid = $('apiGrid');
+        grid.innerHTML = '';
+        endpoints.forEach((endpoint) => {
+          const card = document.createElement('article');
+          card.className = 'api-card';
+          card.innerHTML = `
+            <div class="api-head">
+              <div>
+                <h3 class="api-title">${endpoint.title}</h3>
+                <div class="path">${endpoint.method} ${getPath(endpoint)}</div>
+              </div>
+              <span class="method">${endpoint.method}</span>
+            </div>
+            <div class="hint ${authClass(endpoint.auth)}">鉴权：${authText(endpoint.auth)}</div>
+            <div class="hint">${endpoint.description}</div>
+            <div class="toolbar">
+              <button class="primary" data-run="${endpoint.id}">发送请求</button>
+            </div>
+            <pre id="result-${endpoint.id}" class="result">等待请求...</pre>
+          `;
+          grid.appendChild(card);
+        });
+
+        grid.querySelectorAll('[data-run]').forEach((button) => {
+          button.addEventListener('click', async () => {
+            const endpoint = endpoints.find((item) => item.id === button.dataset.run);
+            button.disabled = true;
+            await callEndpoint(endpoint, $(`result-${endpoint.id}`));
+            button.disabled = false;
+          });
+        });
+      }
+
+      function authText(type) {
+        return {
+          none: '无需认证',
+          jwt: 'JWT Bearer',
+          plugin: '插件 Bearer Token',
+          any: 'JWT 或插件 Token',
+        }[type];
+      }
+
+      function authClass(type) {
+        return `auth-${type}`;
+      }
+
+      async function runAll() {
+        const button = $('runAll');
+        button.disabled = true;
+        const log = $('globalLog');
+        const lines = [];
+        const sequence = [
+          'healthRoot',
+          'healthApi',
+          'register',
+          'login',
+          'refresh',
+          'me',
+          'tokenCurrent',
+          'tokenValidate',
+          'betaStatus',
+          'betaApply',
+          'aiStatus',
+          'aiToggle',
+          'aiUsage',
+          'aiAnalyze',
+          'syncStatus',
+          'syncToggle',
+          'syncExport',
+          'syncImport',
+          'tokenRegenerate',
+          'tokenValidate',
+          'logout',
+        ];
+
+        try {
+          for (const id of sequence) {
+            const endpoint = endpoints.find((item) => item.id === id);
+            const pre = $(`result-${endpoint.id}`);
+            lines.push(`▶ ${endpoint.method} ${getPath(endpoint)} 开始`);
+            setPre(log, lines.join('\n'));
+            const payload = await callEndpoint(endpoint, pre);
+            const code = payload.response && typeof payload.response === 'object' ? payload.response.code : undefined;
+            lines.push(`✓ HTTP ${payload.httpStatus ?? 'ERR'} / code ${code ?? '-'} / ${payload.durationMs ?? '-'}ms`);
+            setPre(log, lines.join('\n'));
+          }
+        } finally {
+          button.disabled = false;
+        }
+      }
+
+      function randomEmail() {
+        const stamp = new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14);
+        $('email').value = `termrepo.tester+${stamp}@example.com`;
+      }
+
+      function persistState() {
+        const data = Object.fromEntries(stateKeys.map((key) => [key, $(key).value]));
+        localStorage.setItem('termrepo-api-test', JSON.stringify(data));
+      }
+
+      function loadState() {
+        const raw = localStorage.getItem('termrepo-api-test');
+        if (!raw) {
+          randomEmail();
+          return;
+        }
+        try {
+          const data = JSON.parse(raw);
+          stateKeys.forEach((key) => {
+            if (data[key]) $(key).value = data[key];
+          });
+        } catch {
+          randomEmail();
+        }
+      }
+
+      function clearState() {
+        localStorage.removeItem('termrepo-api-test');
+        $('accessToken').value = '';
+        $('refreshToken').value = '';
+        $('pluginToken').value = '';
+        randomEmail();
+        updateStatus();
+      }
+
+      function compact(value) {
+        if (!value) return '未设置';
+        return value.length > 36 ? `${value.slice(0, 18)}...${value.slice(-10)}` : value;
+      }
+
+      function updateStatus() {
+        $('jwtStatus').textContent = compact($('accessToken').value.trim());
+        $('refreshStatus').textContent = compact($('refreshToken').value.trim());
+        $('pluginStatus').textContent = compact($('pluginToken').value.trim());
+      }
+
+      $('runAll').addEventListener('click', runAll);
+      $('randomEmail').addEventListener('click', () => {
+        randomEmail();
+        persistState();
+      });
+      $('saveState').addEventListener('click', () => {
+        persistState();
+        updateStatus();
+      });
+      $('clearState').addEventListener('click', clearState);
+      stateKeys.forEach((key) => $(key).addEventListener('input', updateStatus));
+
+      loadState();
+      renderEndpoints();
+      updateStatus();
+    </script>
+  </body>
+</html>
