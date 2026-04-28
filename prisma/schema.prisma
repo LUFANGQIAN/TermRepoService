@@ -9,15 +9,22 @@ datasource db {
 
 /// 用户表
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  nickname  String?
-  role      String   @default("user")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id           String   @id @default(uuid())
+  email        String   @unique
+  nickname     String?
+  passwordHash String?  @map("password_hash")
+  role         String   @default("user")
+  betaStatus   String   @default("none") @map("beta_status")
+  aiEnabled    Boolean  @default(true) @map("ai_enabled")
+  syncEnabled  Boolean  @default(false) @map("sync_enabled")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
 
-  accessTokens AccessToken[]
-  aiRequests   AiRequest[]
+  accessTokens     AccessToken[]
+  aiRequests       AiRequest[]
+  refreshSessions  RefreshSession[]
+  betaApplications BetaApplication[]
+  cloudSnapshot    CloudSnapshot?
 
   @@map("users")
 }
@@ -27,11 +34,13 @@ model AccessToken {
   id        String    @id @default(uuid())
   token     String    @unique
   userId    String    @map("user_id")
-  scope     String[]  @default(["ai"])
+  scope     String[]  @default(["ai:analyze", "sync:snapshot"])
   aiQuota   Int       @default(100) @map("ai_quota")
   aiUsed    Int       @default(0) @map("ai_used")
   expiresAt DateTime? @map("expires_at")
   createdAt DateTime  @default(now()) @map("created_at")
+  revokedAt DateTime? @map("revoked_at")
+  lastUsedAt DateTime? @map("last_used_at")
 
   user User @relation(fields: [userId], references: [id])
 
@@ -43,12 +52,59 @@ model AiRequest {
   id        String   @id @default(uuid())
   userId    String   @map("user_id")
   word      String
+  kind      String   @default("annotate")
   input     Json
   output    Json?
+  outputPreview String? @map("output_preview")
   status    String   @default("pending")
+  latencyMs Int?     @map("latency_ms")
+  success   Boolean  @default(false)
   createdAt DateTime @default(now()) @map("created_at")
 
   user User @relation(fields: [userId], references: [id])
 
   @@map("ai_requests")
+}
+
+model RefreshSession {
+  id        String    @id @default(uuid())
+  tokenHash String    @unique @map("token_hash")
+  userId    String    @map("user_id")
+  expiresAt DateTime  @map("expires_at")
+  revokedAt DateTime? @map("revoked_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("refresh_sessions")
+}
+
+model BetaApplication {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  reason    String
+  scope     String[] @default([])
+  status    String   @default("pending")
+  note      String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("beta_applications")
+}
+
+model CloudSnapshot {
+  id             String   @id @default(uuid())
+  userId         String   @unique @map("user_id")
+  version        Int      @default(0)
+  termCount      Int      @default(0) @map("term_count")
+  snapshot       Json
+  lastSyncStatus String   @default("success") @map("last_sync_status")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("cloud_snapshots")
 }
