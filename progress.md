@@ -1,0 +1,3 @@
+﻿- Added backend Prisma schema/migration, settings service, admin module, admin bootstrap, AI provider APIs, OpenAI-compatible AI analysis, and sync term-limit enforcement.
+- Fixed backend declaration build issue by exporting AI result interfaces.
+- Added ticket Prisma models/migration, user ticket API, admin ticket API, and admin-site ticket list/detail/reply pages.

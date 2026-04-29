@@ -25,6 +25,9 @@ describe('TermRepoService (e2e)', () => {
         onModuleInit: jest.fn(),
         onModuleDestroy: jest.fn(),
         $queryRaw: jest.fn().mockResolvedValue([{ '?column?': 1 }]),
+        user: {
+          upsert: jest.fn().mockResolvedValue(null),
+        },
       })
       .compile();
 

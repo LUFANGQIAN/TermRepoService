@@ -17,6 +17,7 @@ model User {
   betaStatus   String   @default("none") @map("beta_status")
   aiEnabled    Boolean  @default(true) @map("ai_enabled")
   syncEnabled  Boolean  @default(false) @map("sync_enabled")
+  syncTermLimit Int     @default(500) @map("sync_term_limit")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
@@ -25,8 +26,19 @@ model User {
   refreshSessions  RefreshSession[]
   betaApplications BetaApplication[]
   cloudSnapshot    CloudSnapshot?
+  tickets          Ticket[]
+  ticketMessages   TicketMessage[]
 
   @@map("users")
+}
+
+model AppSetting {
+  key       String   @id
+  value     Json
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("app_settings")
 }
 
 /// 访问令牌表
@@ -107,4 +119,39 @@ model CloudSnapshot {
   user User @relation(fields: [userId], references: [id])
 
   @@map("cloud_snapshots")
+}
+
+model Ticket {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  title       String
+  category    String
+  status      String   @default("open")
+  priority    String   @default("normal")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  lastReplyAt DateTime @default(now()) @map("last_reply_at")
+
+  user     User            @relation(fields: [userId], references: [id])
+  messages TicketMessage[]
+
+  @@index([userId, status])
+  @@index([status, lastReplyAt])
+  @@map("tickets")
+}
+
+model TicketMessage {
+  id         String   @id @default(uuid())
+  ticketId   String   @map("ticket_id")
+  authorId   String   @map("author_id")
+  authorRole String   @map("author_role")
+  content    String
+  attachments String[] @default([])
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  author User   @relation(fields: [authorId], references: [id])
+
+  @@index([ticketId, createdAt])
+  @@map("ticket_messages")
 }

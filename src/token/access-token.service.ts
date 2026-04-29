@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { ApiError } from '../common/api-error';
 import { randomToken } from '../common/crypto';
 import { PrismaService } from '../prisma/prisma.service';
+import { SettingsService } from '../settings/settings.service';
 
 const scopeDescriptions: Record<string, string> = {
   'ai:analyze': 'AI term analysis and note suggestions',
@@ -14,6 +15,7 @@ export class AccessTokenService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
+    private readonly settings: SettingsService,
   ) {}
 
   async current(userId: string) {
@@ -22,9 +24,11 @@ export class AccessTokenService {
   }
 
   async regenerate(userId: string) {
+    const previous = await this.prisma.accessToken.findFirst({ where: { userId, revokedAt: null }, orderBy: { createdAt: 'desc' } });
+    const quotas = await this.settings.getDefaultQuotas();
     await this.prisma.accessToken.updateMany({ where: { userId, revokedAt: null }, data: { revokedAt: new Date() } });
     const token = await this.prisma.accessToken.create({
-      data: { token: randomToken('mat', 32), userId, scope: ['ai:analyze', 'sync:snapshot'], aiQuota: 100, aiUsed: 0 },
+      data: { token: randomToken('mat', 32), userId, scope: ['ai:analyze', 'sync:snapshot'], aiQuota: previous?.aiQuota ?? quotas.aiMonthlyQuota, aiUsed: previous?.aiUsed ?? 0 },
     });
     return this.toInfo(token);
   }
@@ -46,8 +50,9 @@ export class AccessTokenService {
   private async ensureToken(userId: string) {
     const existing = await this.prisma.accessToken.findFirst({ where: { userId, revokedAt: null }, orderBy: { createdAt: 'desc' } });
     if (existing) return existing;
+    const quotas = await this.settings.getDefaultQuotas();
     return this.prisma.accessToken.create({
-      data: { token: randomToken('mat', 32), userId, scope: ['ai:analyze', 'sync:snapshot'], aiQuota: 100, aiUsed: 0 },
+      data: { token: randomToken('mat', 32), userId, scope: ['ai:analyze', 'sync:snapshot'], aiQuota: quotas.aiMonthlyQuota, aiUsed: 0 },
     });
   }
 
@@ -64,4 +69,3 @@ export class AccessTokenService {
     };
   }
 }
-

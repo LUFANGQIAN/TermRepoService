@@ -1,4 +1,4 @@
-import { createHash, createHmac, pbkdf2Sync, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
+import { createCipheriv, createDecipheriv, createHash, createHmac, pbkdf2Sync, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
 
 export function randomToken(prefix: string, byteLength = 24): string {
   return `${prefix}_${randomBytes(byteLength).toString('base64url')}`;
@@ -68,3 +68,22 @@ export function id(prefix: string): string {
   return `${prefix}_${randomUUID()}`;
 }
 
+function encryptionKey(secret: string): Buffer {
+  return createHash('sha256').update(secret).digest();
+}
+
+export function encryptSecret(value: string, secret: string): string {
+  const iv = randomBytes(12);
+  const cipher = createCipheriv('aes-256-gcm', encryptionKey(secret), iv);
+  const encrypted = Buffer.concat([cipher.update(value, 'utf8'), cipher.final()]);
+  const tag = cipher.getAuthTag();
+  return [iv.toString('base64url'), tag.toString('base64url'), encrypted.toString('base64url')].join('.');
+}
+
+export function decryptSecret(value: string, secret: string): string {
+  const [iv, tag, encrypted] = value.split('.');
+  if (!iv || !tag || !encrypted) throw new Error('invalid encrypted secret');
+  const decipher = createDecipheriv('aes-256-gcm', encryptionKey(secret), Buffer.from(iv, 'base64url'));
+  decipher.setAuthTag(Buffer.from(tag, 'base64url'));
+  return Buffer.concat([decipher.update(Buffer.from(encrypted, 'base64url')), decipher.final()]).toString('utf8');
+}

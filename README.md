@@ -327,3 +327,22 @@ http://localhost:3000/health
 - `../TermRepo术语库系列文档/数据库文档/数据库设计总览.md`
 - `../TermRepo术语库系列文档/数据库文档/一期核心数据表设计.md`
 - `../TermRepoPlugin/termrepoplugin-vscode/project-docs/后端项目上下文说明.md`
+
+## 13. 管理站与 AI 配额配置
+
+当前推荐的生产部署流程：
+
+1. 创建 PostgreSQL 数据库。
+2. 复制 `.env.example` 为 `.env`，填写 `DATABASE_URL`、`AUTH_JWT_SECRET`、`APP_SECRET_ENCRYPTION_KEY`、`ADMIN_EMAIL`、`ADMIN_PASSWORD`。
+3. 启动后端，服务会自动确保 `ADMIN_EMAIL` 对应账号存在并拥有 `admin` 角色。
+4. 部署独立管理站 `TermRepoWebSite/termrepo-admin-site`，通过 `VITE_API_BASE_URL` 指向生产后端 `/api/v1`。
+5. 登录管理站，配置全局 OpenAI-compatible AI 模型 `Base URL`、`Model`、`API Key`，并测试连接。
+6. 在管理站配置开放注册用户的默认 AI 月额度和云同步词条上限。
+7. 部署控制站 `TermRepoWebSite/termrepo-control-site`，邀请普通用户注册使用。
+
+说明：
+
+- AI 模型密钥不放在前端源码中，由管理站提交到后端后加密存入数据库。
+- 第一版只有一个全局 AI 模型配置，所有用户共用该模型，由账号额度限制使用量。
+- 新用户注册时会获得管理站设置的默认 AI 月额度和云同步词条上限。
+- 插件调用 AI 翻译时，如果模型未配置、额度不足或调用失败，会回退本地收藏流程。

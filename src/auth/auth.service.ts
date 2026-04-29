@@ -4,11 +4,13 @@ import { Prisma } from '@prisma/client';
 import { ApiError } from '../common/api-error';
 import { createAccessJwt, hashPassword, hashValue, randomToken, verifyPassword } from '../common/crypto';
 import { PrismaService } from '../prisma/prisma.service';
+import { SettingsService } from '../settings/settings.service';
 
 export interface AuthUser {
   id: string;
   email: string;
   username: string;
+  role: string;
   createdAt: string;
 }
 
@@ -23,12 +25,14 @@ export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
+    private readonly settings: SettingsService,
   ) {}
 
   async register(email: string, password: string, username: string) {
     this.assertEmail(email);
     this.assertPassword(password);
     if (!username.trim()) throw new ApiError(40003, 'username is required');
+    const quotas = await this.settings.getDefaultQuotas();
 
     try {
       const user = await this.prisma.user.create({
@@ -36,6 +40,7 @@ export class AuthService {
           email: email.trim().toLowerCase(),
           nickname: username.trim(),
           passwordHash: hashPassword(password),
+          syncTermLimit: quotas.syncTermLimit,
         },
       });
       await this.ensureAccessToken(user.id);
@@ -78,6 +83,8 @@ export class AuthService {
       betaStatus: user.betaStatus as 'none' | 'pending' | 'approved' | 'rejected',
       aiEnabled: user.aiEnabled,
       syncEnabled: user.syncEnabled,
+      syncTermLimit: user.syncTermLimit,
+      role: user.role,
       tokenValid: Boolean(token && (!token.expiresAt || token.expiresAt.getTime() > Date.now())),
       createdAt: user.createdAt.toISOString(),
     };
@@ -93,7 +100,7 @@ export class AuthService {
     return null;
   }
 
-  private async issueAuth(user: { id: string; email: string; nickname: string | null; createdAt: Date }, existingRefreshToken?: string): Promise<AuthResponse> {
+  private async issueAuth(user: { id: string; email: string; nickname: string | null; role?: string; createdAt: Date }, existingRefreshToken?: string): Promise<AuthResponse> {
     const accessToken = createAccessJwt(
       { sub: user.id, email: user.email },
       this.config.get<string>('AUTH_JWT_SECRET') ?? 'termrepo-dev-secret',
@@ -112,15 +119,16 @@ export class AuthService {
     return { accessToken, refreshToken, user: this.toAuthUser(user) };
   }
 
-  private toAuthUser(user: { id: string; email: string; nickname: string | null; createdAt: Date }): AuthUser {
-    return { id: user.id, email: user.email, username: user.nickname ?? user.email, createdAt: user.createdAt.toISOString() };
+  private toAuthUser(user: { id: string; email: string; nickname: string | null; role?: string; createdAt: Date }): AuthUser {
+    return { id: user.id, email: user.email, username: user.nickname ?? user.email, role: user.role ?? 'user', createdAt: user.createdAt.toISOString() };
   }
 
   private async ensureAccessToken(userId: string) {
     const existing = await this.prisma.accessToken.findFirst({ where: { userId, revokedAt: null } });
     if (existing) return existing;
+    const quotas = await this.settings.getDefaultQuotas();
     return this.prisma.accessToken.create({
-      data: { token: randomToken('mat', 32), userId, scope: ['ai:analyze', 'sync:snapshot'], aiQuota: 100, aiUsed: 0 },
+      data: { token: randomToken('mat', 32), userId, scope: ['ai:analyze', 'sync:snapshot'], aiQuota: quotas.aiMonthlyQuota, aiUsed: 0 },
     });
   }
 

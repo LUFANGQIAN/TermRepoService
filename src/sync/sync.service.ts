@@ -19,6 +19,7 @@ export class SyncService {
     return {
       enabled: user.syncEnabled,
       termCount: user.cloudSnapshot?.termCount ?? 0,
+      termLimit: user.syncTermLimit,
       lastSyncAt: user.cloudSnapshot?.updatedAt.toISOString() ?? null,
       lastSyncStatus: user.cloudSnapshot?.lastSyncStatus ?? 'success',
       pendingConflicts: 0,
@@ -48,6 +49,9 @@ export class SyncService {
     const terms = this.extractTerms(snapshot);
     const existing = await this.prisma.cloudSnapshot.findUnique({ where: { userId } });
     const mergedTerms = mode === 'merge' && existing ? this.mergeTerms(existing.snapshot as TermSnapshot, terms) : terms;
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new ApiError(40400, 'user not found');
+    if (mergedTerms.length > user.syncTermLimit) throw new ApiError(41340, 'sync term limit exceeded');
     const version = (existing?.version ?? 0) + 1;
     const snapshotData = { version, exportedAt: new Date().toISOString(), terms: mergedTerms } as Prisma.InputJsonObject;
     await this.prisma.cloudSnapshot.upsert({
@@ -67,7 +71,7 @@ export class SyncService {
       },
     });
     await this.prisma.user.update({ where: { id: userId }, data: { syncEnabled: true } });
-    return { imported: terms.length, skipped: mode === 'merge' ? terms.length - this.countNewTerms(existing?.snapshot as TermSnapshot | undefined, terms) : 0, snapshotVersion: version };
+    return { imported: terms.length, skipped: mode === 'merge' ? terms.length - this.countNewTerms(existing?.snapshot as TermSnapshot | undefined, terms) : 0, snapshotVersion: version, termCount: mergedTerms.length, termLimit: user.syncTermLimit };
   }
 
   private extractTerms(snapshot: TermSnapshot) {
